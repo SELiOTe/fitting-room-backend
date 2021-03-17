@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.seliote.fr.mapper.UserMapper">
+
+    <insert id="insert">
+        INSERT INTO user(country_code, tel_no, nickname, gender)
+        VALUES (#{mi.countryCode}, #{mi.telNo}, #{mi.nickname}, #{mi.gender})
+    </insert>
+
+    <select id="countUser" resultType="long">
+        SELECT COUNT(*)
+        FROM user
+        WHERE country_code = #{mi.countryCode}
+          AND tel_no = #{mi.telNo}
+          AND deleted = FALSE
+    </select>
+
+    <select id="selectId" resultType="long">
+        SELECT id
+        FROM user
+        WHERE country_code = #{mi.countryCode}
+          AND tel_no = #{mi.telNo}
+          AND deleted = FALSE
+    </select>
+
+    <select id="selectInfo" resultType="com.seliote.fr.model.mo.user.InfoMo">
+        SELECT user.id,
+               user.nickname,
+               user.gender,
+               IFNULL(user_avatar.avatar, '0000000000000000000000000000000000000000') AS avatar
+        FROM user
+                 LEFT OUTER JOIN user_avatar ON user.id = user_avatar.user_id AND user_avatar.deleted = FALSE
+        WHERE user.id = #{userId}
+          AND user.deleted = FALSE
+        ORDER BY user_avatar.modified_at DESC, id DESC
+        LIMIT 0, 1
+    </select>
+
+    <update id="updateInfo">
+        UPDATE user
+        SET nickname    = #{mi.nickname},
+            gender      = #{mi.gender},
+            modified_at = CURRENT_TIMESTAMP
+        WHERE id = #{mi.id}
+    </update>
+
+    <select id="selectBatchInfo" resultType="com.seliote.fr.model.mo.user.SelectInfoBatchMo">
+        SELECT u.id AS id,
+        u.nickname AS nickname,
+        u.gender AS gender,
+        IFNULL(a.avatar, '0000000000000000000000000000000000000000') AS avatar
+        FROM user AS u
+        LEFT OUTER JOIN
+        (SELECT a1.user_id, a1.avatar FROM user_avatar AS a1
+        INNER JOIN
+        (SELECT user_id, MAX(created_at) AS created_at FROM user_avatar WHERE deleted = FALSE GROUP BY user_id) AS a2
+        ON a1.user_id = a2.user_id AND a1.created_at = a2.created_at
+        WHERE a1.deleted = FALSE) AS a
+        ON u.id = a.user_id
+        WHERE u.deleted = FALSE
+        AND u.id IN
+        <foreach collection="mi" item="item" open="(" separator="," close=")">
+            #{item.id}
+        </foreach>
+    </select>
+
+</mapper>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<Configuration status="info" monitorInterval="60">
+
+    <!-- FIXME 日志配置, 部署至生产环境前需要修改 -->
+    <Properties>
+        <!-- 输出方式, 取值 CONSOLE/FILE -->
+        <Property name="method">CONSOLE</Property>
+        <!--<Property name="method">FILE</Property>-->
+        <!-- 日志文件路径 -->
+        <Property name="path">/tmp/fr/log</Property>
+        <!--<Property name="path">/fr/log</Property>-->
+        <!-- 应用输出日志等级 -->
+        <Property name="level">debug</Property>
+        <!-- 日志输出格式 -->
+        <Property name="pattern">%d{HH:mm:ss.SSS} [%t] %-5level %logger{36}(%L) - %-0.-1024msg%n</Property>
+    </Properties>
+
+    <Appenders>
+        <Console name="CONSOLE">
+            <PatternLayout pattern="${pattern}"/>
+        </Console>
+        <RollingFile name="FILE" filename="${path}/fitting_room.log"
+                     filePattern="${path}/fitting_room_%d{yyyy-MM-dd}-%i.log.gz">
+            <PatternLayout pattern="${pattern}"/>
+            <Policies>
+                <SizeBasedTriggeringPolicy size="200 MB"/>
+            </Policies>
+            <DefaultRolloverStrategy min="1" max="50"/>
+        </RollingFile>
+    </Appenders>
+
+    <Loggers>
+        <Root level="info">
+            <AppenderRef ref="${method}"/>
+        </Root>
+        <Logger name="com.seliote.fr" level="${level}"/>
+    </Loggers>
+
+</Configuration>

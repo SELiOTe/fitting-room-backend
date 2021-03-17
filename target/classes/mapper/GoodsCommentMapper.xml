@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.seliote.fr.mapper.GoodsCommentMapper">
+
+    <resultMap id="selectCommentSortablePage" type="com.seliote.fr.model.PageO">
+        <result property="pageNumber" column="page_number"/>
+        <result property="pageSize" column="page_size"/>
+        <result property="totalCount" column="total_count"/>
+        <collection property="page" ofType="com.seliote.fr.model.mo.goodscomment.SelectCommentSortablePageMo">
+            <result property="userId" column="user_id"/>
+            <result property="createdAt" column="created_at"/>
+            <result property="text" column="text"/>
+            <collection property="images"
+                        ofType="com.seliote.fr.model.mo.goodscomment.SelectCommentSortablePageImageMo">
+                <result property="image" column="image"/>
+                <result property="imageOrder" column="image_order"/>
+            </collection>
+        </collection>
+    </resultMap>
+
+    <select id="selectCommentSortablePage" resultMap="selectCommentSortablePage">
+        (SELECT #{mi.pageNumber} AS page_number, #{mi.pageSize} AS page_size, c.total_count AS total_count,
+        c.user_id AS user_id, c.created_at AS created_at, c.comment_text AS text, i.image AS image,
+        i.image_order AS image_order
+        FROM (
+        SELECT COUNT(*) OVER() AS total_count, id, user_id, created_at, comment_text
+        FROM goods_comment
+        WHERE goods_id = #{mi.id} AND deleted = FALSE
+        GROUP BY (id)
+        ORDER BY
+        <choose>
+            <when test="mi.orderBy == 1">
+                goods_comment.created_at DESC, id DESC
+            </when>
+        </choose>
+        LIMIT #{mi.pageSize} OFFSET ${(mi.pageNumber - 1) * mi.pageSize}
+        ) AS c
+        LEFT OUTER JOIN goods_comment_image AS i
+        ON c.id = i.comment_id AND i.deleted = FALSE)
+        UNION ALL
+        (SELECT #{mi.pageNumber} AS page_number, #{mi.pageSize} AS page_size, COUNT(*) AS total_count,
+        NULL AS user_id, NULL AS created_at, NULL AS text, NULL AS image, NULL AS image_order
+        FROM goods_comment
+        WHERE NOT EXISTS(SELECT 0 FROM goods_comment WHERE goods_id = #{mi.id} AND deleted = FALSE
+        LIMIT #{mi.pageSize} OFFSET ${(mi.pageNumber - 1) * mi.pageSize})
+        AND goods_id = #{mi.id}
+        AND deleted = FALSE
+        GROUP BY goods_id)
+    </select>
+
+</mapper>

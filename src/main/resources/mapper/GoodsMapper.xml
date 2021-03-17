@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.seliote.fr.mapper.GoodsMapper">
+
+    <resultMap id="infoMo" type="com.seliote.fr.model.mo.goods.InfoMo">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="price" column="price"/>
+        <result property="listPriceMethod" column="list_price_method"/>
+        <collection property="images" ofType="com.seliote.fr.model.mo.goods.InfoImageMo">
+            <result property="image" column="image"/>
+            <result property="imageOrder" column="image_order"/>
+        </collection>
+        <collection property="skus" ofType="com.seliote.fr.model.mo.goods.InfoSkuMo">
+            <result property="colorId" column="color_id"/>
+            <result property="sizeId" column="size_id"/>
+            <result property="stock" column="stock"/>
+        </collection>
+    </resultMap>
+
+    <select id="selectInfo" resultMap="infoMo">
+        SELECT goods.id,
+               goods.name,
+               goods.price,
+               goods.list_price_method,
+               goods_image.image,
+               goods_image.image_order,
+               goods_sku.color_id,
+               goods_sku.size_id,
+               goods_sku.stock
+        FROM goods
+                 LEFT OUTER JOIN goods_image ON goods.id = goods_image.goods_id AND goods_image.deleted = FALSE
+                 LEFT OUTER JOIN goods_sku ON goods.id = goods_sku.goods_id AND goods_sku.deleted = FALSE
+        WHERE goods.id = #{mi.id}
+          AND goods.deleted = FALSE
+    </select>
+
+    <select id="selectSkuIdMi" resultType="long">
+        SELECT id
+        FROM goods_sku
+        WHERE goods_id = #{mi.goodsId}
+          AND color_id = #{mi.colorId}
+          AND size_id = #{mi.sizeId}
+          AND deleted = FALSE
+    </select>
+</mapper>
